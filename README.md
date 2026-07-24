@@ -1,98 +1,73 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<div align="center">
+  <h1>Truce - Backend API</h1>
+  <p><b>Gamificando el bienestar digital y el control de tiempo en pantalla mediante presión social positiva.</b></p>
+</div>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 🚀 Acerca del Proyecto
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**Truce** es una aplicación móvil diseñada para ayudar a los usuarios a reducir y controlar su tiempo de pantalla. A diferencia de los controles parentales tradicionales, Truce introduce dinámicas de **gamificación** y **presión de pares** (peer pressure). 
 
-## Description
+Los usuarios establecen límites de uso diario para sus aplicaciones. Si un usuario agota su tiempo permitido, su aplicación se bloquea y deberá **solicitar tiempo extra a sus amigos** dentro de la app. Los amigos tienen el poder de aprobar o rechazar estas peticiones de tiempo, fomentando un uso de pantalla consciente, compartido y responsable.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Este repositorio contiene el **Backend (API REST)** encargado de procesar la lógica de negocio, las relaciones de amistad, las métricas de tiempo de pantalla y la autenticación.
 
-## Project setup
+## 🛠️ Stack Tecnológico
 
-```bash
-$ npm install
-```
+El proyecto está construido bajo los estándares más modernos para asegurar su escalabilidad y fácil mantenimiento:
 
-## Compile and run the project
+- **Framework:** [NestJS](https://nestjs.com/) (TypeScript) - Estructura modular, inyección de dependencias y fuertemente tipado.
+- **Base de Datos:** [PostgreSQL](https://www.postgresql.org/) - Base de datos relacional sólida.
+- **ORM:** [Prisma](https://www.prisma.io/) - Acceso a la base de datos tipado y migraciones sencillas.
+- **Autenticación:** [Supabase Auth](https://supabase.com/auth) / JWT - Delegación completa de la seguridad y sesión de usuario.
+- **Validación:** `class-validator` y `class-transformer` mediante el `ValidationPipe` global de NestJS.
 
-```bash
-# development
-$ npm run start
+## 📂 Estructura Principal
 
-# watch mode
-$ npm run start:dev
+La arquitectura modular sigue los principios de NestJS:
 
-# production mode
-$ npm run start:prod
-```
+- `src/auth/`: Lógica de validación de tokens JWT (vía Supabase).
+- `src/user/`: Gestión de usuarios, perfiles y tokens FCM para notificaciones Push.
+- `src/request/`: Core de la app. Gestión de las peticiones de tiempo de pantalla entre amigos (aprobaciones/rechazos).
+- `src/prisma/`: Módulo global para la inyección de la conexión a la BD mediante Prisma Client.
 
-## Run tests
+## 🚦 Primeros Pasos
 
-```bash
-# unit tests
-$ npm run test
+### Prerrequisitos
 
-# e2e tests
-$ npm run test:e2e
+- Node.js (v18 o superior recomendado)
+- PostgreSQL (Instalado localmente o mediante Docker / Cloud)
 
-# test coverage
-$ npm run test:cov
-```
+### Instalación
 
-## Deployment
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/ivanmacieldxz/truce-app-backend.git
+   cd truce-app-backend
+   ```
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+2. Instala las dependencias:
+   ```bash
+   npm install
+   ```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+3. Configura las variables de entorno:
+   Configura la variable `DATABASE_URL` en un archivo `.env` en la raíz del proyecto o directamente en `prisma.config.ts`.
+   ```env
+   DATABASE_URL="postgresql://usuario:password@localhost:5432/truce_db?schema=public"
+   ```
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+4. Aplica las migraciones a tu base de datos:
+   ```bash
+   npx prisma migrate dev
+   ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+5. Inicia el servidor de desarrollo:
+   ```bash
+   npm run start:dev
+   ```
 
-## Resources
+El servidor estará escuchando por defecto en `http://localhost:3000`.
 
-Check out a few resources that may come in handy when working with NestJS:
+## 📜 Licencia
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+[MIT License](LICENSE)
