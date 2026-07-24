@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  username         String          @unique
+  fcmToken         String?         
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  sentRequests     TimeRequest[]   @relation("SentRequests")
+  receivedRequests TimeRequest[]   @relation("ReceivedRequests")
+  friendshipsInit  Friendship[]    @relation("User1")
+  friendshipsRecv  Friendship[]    @relation("User2")
+  appTimes         UserAppTime[]
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userId1   String
+  userId2   String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user1     User     @relation("User1", fields: [userId1], references: [id])
+  user2     User     @relation("User2", fields: [userId2], references: [id])
+
+  @@unique([userId1, userId2])
+}
+
+model TimeRequest {
+  id              String   @id @default(uuid())
+  senderId        String
+  receiverId      String
+  amountRequested Int      // Minutes
+  message         String?
+  status          String   @default("PENDING") // PENDING, APPROVED, DENIED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sender          User     @relation("SentRequests", fields: [senderId], references: [id])
+  receiver        User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+}
+
+model App {
+  id          String        @id @default(uuid())
+  packageName String        @unique
+  name        String
+  
+  userTimes   UserAppTime[]
+}
+
+model UserAppTime {
+  id         String   @id @default(uuid())
+  userId     String
+  appId      String
+  timeSpent  Int      @default(0) // Minutes
+  dailyLimit Int?     // Limit in minutes
+  date       DateTime @default(now()) @db.Date
+
+  user       User     @relation(fields: [userId], references: [id])
+  app        App      @relation(fields: [appId], references: [id])
+
+  @@unique([userId, appId, date])
+}
