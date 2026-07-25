@@ -19,7 +19,7 @@ Maneja el perfil del usuario, la búsqueda de contactos y el registro del token 
 |---|---|---|---|---|
 | `GET` | `/users/me` | Obtiene el perfil del usuario autenticado | *-* | `UserDto` |
 | `PATCH` | `/users/me` | Permite la actualización de datos de usuario, usado típicamente para registrar o actualizar el token FCM para notificaciones push. | `{ email: string, username: string, fcmToken: string }` | `UserDto` |
-| `GET` | `/users` | Busca usuarios por `username` para enviar solicitudes de amistad | Query: `?q=username` | `UserSummaryDto[]` |
+| `GET` | `/users` | Busca usuarios por `username` para enviar solicitudes de amistad | Query: `?q=username&page=1&limit=20` | `UserSummaryDto[]` |
 
 ---
 
@@ -29,8 +29,8 @@ Gestiona la red de contactos, incluyendo el envío, aceptación, rechazo y cance
 
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
-| `GET` | `/friends` | Obtiene la lista de amigos confirmados (`ACCEPTED`) | *-* | `FriendDto[]` |
-| `GET` | `/friends/requests` | Lista solicitudes de amistad pendientes (enviadas o recibidas) | Query: `?type=incoming\|outgoing` | `FriendshipRequestDto[]` |
+| `GET` | `/friends` | Obtiene la lista de amigos confirmados (`ACCEPTED`) | Query: `?page=1&limit=20` | `FriendDto[]` |
+| `GET` | `/friends/requests` | Lista solicitudes de amistad pendientes (enviadas o recibidas) | Query: `?type=incoming\|outgoing&page=1&limit=20` | `FriendshipRequestDto[]` |
 | `POST` | `/friends/requests` | Envía una solicitud de amistad a otro usuario | `{ targetUserId: string }` | `FriendshipDto` (`201 Created`) |
 | `PATCH` | `/friends/requests/:id` | Acepta o rechaza una solicitud de amistad recibida | `{ status: "ACCEPTED" \| "REJECTED" }` | `FriendshipDto` |
 | `DELETE` | `/friends/:friendId` | Elimina a un usuario de la lista de amigos | *-* | `204 No Content` |
@@ -44,7 +44,7 @@ Gestiona el flujo de peticiones de tiempo de pantalla entre amigos (*peer pressu
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
 | `POST` | `/time-requests` | Crea y envía una solicitud de tiempo extra a uno o múltiples amigos | `{ receiverIds: string[], amountRequested, message? }` | `TimeRequestDto` (`201 Created`) |
-| `GET` | `/time-requests` | Historial de solicitudes de tiempo (enviadas y recibidas). En caso de que el parámetro status no esté presente, devuelve todas sin filtro | Query: `?status=PENDING\|APPROVED\|DENIED&type=OUTGOING\|INCOMING` | `TimeRequestDto[]` |
+| `GET` | `/time-requests` | Historial de solicitudes de tiempo (enviadas y recibidas). En caso de que el parámetro status no esté presente, devuelve todas sin filtro | Query: `?status=PENDING\|APPROVED\|DENIED&type=OUTGOING\|INCOMING&page=1&limit=20` | `TimeRequestDto[]` |
 | `GET` | `/time-requests/:id` | Detalle de una solicitud (incluye el uso diario actual del amigo para evaluar) | *-* | `TimeRequestDetailDto` |
 | `PATCH` | `/time-requests/:id` | Aprueba o rechaza la solicitud de tiempo recibida | `{ status: "APPROVED" \| "DENIED" }` | `TimeRequestDto` |
 
@@ -57,8 +57,8 @@ Permite la sincronización de métricas de uso recopiladas por el cliente Androi
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
 | `POST` | `/usage-stats/sync` | Sincronización en lote (*batch*) del tiempo usado por app en el día | `{ date, stats: [{ packageName, name, timeSpent }] }` | `{ syncedCount: number }` |
-| `GET` | `/usage-stats/me` | Obtiene las estadísticas de uso del usuario para una fecha | Query: `?date=YYYY-MM-DD` | `UserAppTimeDto[]` |
-| `GET` | `/usage-stats/friends/:friendId` | Permite ver las estadísticas de uso de un amigo | Query: `?date=YYYY-MM-DD` | `UserAppTimeDto[]` |
+| `GET` | `/usage-stats/me` | Obtiene las estadísticas de uso del usuario para una fecha | Query: `?date=YYYY-MM-DD&page=1&limit=20` | `UserAppTimeDto[]` |
+| `GET` | `/usage-stats/friends/:friendId` | Permite ver las estadísticas de uso de un amigo | Query: `?date=YYYY-MM-DD&page=1&limit=20` | `UserAppTimeDto[]` |
 
 ---
 
@@ -68,7 +68,7 @@ Gestiona los límites diarios que cada usuario configura por aplicación.
 
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
-| `GET` | `/app-limits` | Obtiene todos los límites configurados por el usuario | *-* | `UserAppLimitDto[]` |
+| `GET` | `/app-limits` | Obtiene todos los límites configurados por el usuario | Query: `?page=1&limit=20` | `UserAppLimitDto[]` |
 | `PUT` | `/app-limits` | Crea o actualiza el límite diario para una aplicación (*upsert*) | `{ packageName, name, dailyLimit }` | `UserAppLimitDto` |
 | `DELETE` | `/app-limits/:id` | Elimina el límite configurado para una app | *-* | `204 No Content` |
 
