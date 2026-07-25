@@ -68,6 +68,3 @@ La arquitectura modular sigue los principios de NestJS:
 
 El servidor estará escuchando por defecto en `http://localhost:3000`.
 
-## 📜 Licencia
-
-[MIT License](LICENSE)
