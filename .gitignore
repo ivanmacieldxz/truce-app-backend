@@ -1,5 +1,26 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# dependencies
+/node_modules
+npm-debug.log
+yarn-error.log
 
-/generated/prisma
+# environment variables
+.env
+.env.test
+.env.production
+
+# build
+/dist
+/generated
+.build
+
+# coverage
+/coverage
+
+# IDEs and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.agents/scratch/
