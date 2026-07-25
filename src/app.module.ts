@@ -7,9 +7,10 @@ import { UsersModule } from './modules/users/users.module';
 import { FriendshipsModule } from './modules/friendships/friendships.module';
 import { TimeRequestsModule } from './modules/time-requests/time-requests.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { UsageStatsModule } from './modules/usage-stats/usage-stats.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, FriendshipsModule, TimeRequestsModule, NotificationsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, FriendshipsModule, TimeRequestsModule, NotificationsModule, UsageStatsModule],
   controllers: [AppController],
   providers: [AppService],
 })
