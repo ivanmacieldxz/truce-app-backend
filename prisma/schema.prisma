@@ -22,6 +22,7 @@ model User {
   friendshipsInit  Friendship[]    @relation("User1")
   friendshipsRecv  Friendship[]    @relation("User2")
   appTimes         UserAppTime[]
+  appLimits        UserAppLimit[]
 }
 
 model Friendship {
@@ -58,6 +59,19 @@ model App {
   name        String
   
   userTimes   UserAppTime[]
+  userLimits  UserAppLimit[]
+}
+
+model UserAppLimit {
+  id         String   @id @default(uuid())
+  userId     String
+  appId      String
+  dailyLimit Int      // Limit in minutes
+
+  user       User     @relation(fields: [userId], references: [id])
+  app        App      @relation(fields: [appId], references: [id])
+
+  @@unique([userId, appId])
 }
 
 model UserAppTime {
@@ -65,7 +79,6 @@ model UserAppTime {
   userId     String
   appId      String
   timeSpent  Int      @default(0) // Minutes
-  dailyLimit Int?     // Limit in minutes
   date       DateTime @default(now()) @db.Date
 
   user       User     @relation(fields: [userId], references: [id])

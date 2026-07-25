@@ -1,6 +1,6 @@
 # Modelo de Datos - Truce Backend
 
-El modelo de datos de Truce está diseñado para soportar eficientemente las relaciones de amistad, el registro del tiempo de uso diario y el sistema de peticiones de tiempo. Utilizamos **PostgreSQL** administrado a través de **Prisma ORM**.
+El modelo de datos de Truce está diseñado para soportar eficientemente las relaciones de amistad, el registro del tiempo de uso diario, los límites de tiempo configurados y el sistema de peticiones de tiempo. Utilizamos **PostgreSQL** administrado a través de **Prisma ORM**.
 
 A continuación se detalla la estructura y propósito de cada entidad del sistema:
 
@@ -15,7 +15,7 @@ Representa a los usuarios de la aplicación. La autenticación real está delega
 - `fcmToken`: Token de Firebase Cloud Messaging. Es vital para poder enviarle notificaciones push cuando recibe solicitudes de amistad o peticiones de tiempo.
 - `createdAt` / `updatedAt`: Fechas de auditoría.
 
-*Relaciones:* Posee relaciones uno-a-muchos con las solicitudes de tiempo enviadas y recibidas, las amistades (iniciadas y recibidas), y las estadísticas de uso de aplicaciones.
+*Relaciones:* Posee relaciones uno-a-muchos con las solicitudes de tiempo enviadas y recibidas, las amistades (iniciadas y recibidas), los límites de aplicaciones configurados, y las estadísticas de tiempo consumido.
 
 ### 2. Friendship (Amistad / Solicitud de Amistad)
 Maneja el grafo social de la aplicación. Sirve tanto para representar solicitudes de amistad pendientes como conexiones confirmadas.
@@ -37,7 +37,8 @@ Registra las peticiones (peer pressure) que un usuario hace a un amigo cuando ag
 - `amountRequested`: Cantidad de tiempo solicitada (en minutos).
 - `message`: Mensaje opcional enviado por el solicitante (ej. "¡Porfa, estoy en medio de una partida!").
 - `status`: Estado de la petición. Valores: `PENDING`, `APPROVED`, `DENIED`.
-- `createdAt` / `updatedAt`: Tiempos de creación y resolución de la solicitud.
+- `createdAt`: Fecha y hora exactas en la que se realizó la solicitud (generado automáticamente al insertar la fila, permitiendo mostrar cuándo ocurrió en el historial del cliente Android).
+- `updatedAt`: Fecha y hora de resolución de la solicitud.
 
 ### 4. App (Aplicación)
 Catálogo global de las aplicaciones instaladas en los dispositivos para evitar duplicación de texto y estandarizar los datos.
@@ -46,17 +47,26 @@ Catálogo global de las aplicaciones instaladas en los dispositivos para evitar 
 - `packageName`: Identificador único de la aplicación (ej. `com.whatsapp`, `com.instagram.android`).
 - `name`: Nombre legible de la aplicación ("WhatsApp", "Instagram").
 
-### 5. UserAppTime (Tiempo de Uso y Estadísticas)
-Almacena cuánto tiempo ha usado un usuario una aplicación específica en un día en particular, así como su límite diario establecido. 
+### 5. UserAppLimit (Límites de Aplicaciones)
+Almacena el límite de tiempo configurado por un usuario para una aplicación determinada.
 
 - `id`: UUID.
 - `userId`: Referencia al usuario.
 - `appId`: Referencia a la aplicación.
-- `timeSpent`: Tiempo total utilizado en el día actual (en minutos). Este valor se actualiza periódicamente desde el cliente Android.
-- `dailyLimit`: Límite máximo de tiempo permitido para esa app en ese día (en minutos).
-- `date`: Fecha correspondiente al registro (sin considerar la hora, para agrupar estadísticas por día).
+- `dailyLimit`: Límite máximo de tiempo diario permitido para esa app (en minutos).
 
-> **Caso de uso:** Cuando un amigo revisa una `TimeRequest`, el backend consultará esta tabla usando la fecha de hoy, el `senderId` y el `appId` involucrado (si la solicitud estuviese vinculada a una app específica) para mostrarle cuánto tiempo lleva usado realmente el solicitante.
+> **Nota:** La restricción `@@unique([userId, appId])` asegura que solo exista un límite activo configurado por usuario por aplicación.
+
+### 6. UserAppTime (Tiempo de Uso Diario)
+Registra el tiempo que un usuario ha gastado efectivamente en una aplicación durante un día específico. Cada fila representa un día de uso.
+
+- `id`: UUID.
+- `userId`: Referencia al usuario.
+- `appId`: Referencia a la aplicación.
+- `timeSpent`: Tiempo total utilizado en el día (en minutos). Este valor se actualiza periódicamente desde el cliente Android.
+- `date`: Fecha correspondiente al registro (sin la hora, para agrupar estadísticas por día).
+
+> **Nota:** La combinación de usuario, app y fecha es única (`@@unique([userId, appId, date])`), de modo que no se duplican registros por día.
 
 ## Diagrama de Relaciones Conceptual
 
@@ -66,7 +76,9 @@ erDiagram
     User ||--o{ Friendship : "Recibe (userId2)"
     User ||--o{ TimeRequest : "Envía (senderId)"
     User ||--o{ TimeRequest : "Recibe (receiverId)"
+    User ||--o{ UserAppLimit : "Define"
     User ||--o{ UserAppTime : "Registra"
+    App ||--o{ UserAppLimit : "Es limitada en"
     App ||--o{ UserAppTime : "Es medida en"
 
     User {
@@ -84,16 +96,20 @@ erDiagram
         Int amountRequested
         String message
         String status
+        DateTime createdAt
     }
     App {
         String id PK
         String packageName
         String name
     }
+    UserAppLimit {
+        String id PK
+        Int dailyLimit
+    }
     UserAppTime {
         String id PK
         Int timeSpent
-        Int dailyLimit
         DateTime date
     }
 ```
