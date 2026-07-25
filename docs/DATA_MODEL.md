@@ -12,70 +12,76 @@ Representa a los usuarios de la aplicación. La autenticación real está delega
 - `id`: UUID único (suele coincidir o mapearse con el ID del usuario en Supabase).
 - `email`: Correo electrónico (único).
 - `username`: Nombre de usuario visible para otros (único).
-- `fcmToken`: Token de Firebase Cloud Messaging. Es vital para poder enviarle notificaciones push cuando recibe solicitudes de amistad o peticiones de tiempo.
+- `fcmToken`: Token de Firebase Cloud Messaging.
 - `createdAt` / `updatedAt`: Fechas de auditoría.
 
-*Relaciones:* Posee relaciones uno-a-muchos con las solicitudes de tiempo enviadas y recibidas, las amistades (iniciadas y recibidas), los límites de aplicaciones configurados, y las estadísticas de tiempo consumido.
+*Relaciones:* Relaciones uno-a-muchos con las amistades, límites de apps, estadísticas, solicitudes enviadas (hacia `TimeRequest`) y solicitudes recibidas (hacia `TimeRequestRecipient`).
 
 ### 2. Friendship (Amistad / Solicitud de Amistad)
-Maneja el grafo social de la aplicación. Sirve tanto para representar solicitudes de amistad pendientes como conexiones confirmadas.
+Maneja el grafo social de la aplicación.
 
 - `id`: UUID.
 - `userId1`: Referencia al usuario que inicia la solicitud.
 - `userId2`: Referencia al usuario que recibe la solicitud.
-- `status`: Estado actual de la relación. Valores posibles: `PENDING` (solicitud enviada), `ACCEPTED` (son amigos), `REJECTED` (solicitud rechazada).
+- `status`: `PENDING`, `ACCEPTED`, `REJECTED`.
 - `createdAt` / `updatedAt`: Fechas de registro y última actualización.
 
-> **Nota:** Existe una restricción única (`@@unique([userId1, userId2])`) para evitar que dos usuarios tengan múltiples registros de amistad simultáneos.
+> **Nota:** Existe una restricción única (`@@unique([userId1, userId2])`).
 
-### 3. TimeRequest (Solicitud de Tiempo Extra)
-Registra las peticiones (peer pressure) que un usuario hace a un amigo cuando agota su límite de tiempo en pantalla.
+### 3. TimeRequest (Solicitud de Tiempo Extra - Emisor)
+Registra el evento lógico de una petición de tiempo. Esto permite que un usuario pueda pedir tiempo a múltiples amigos a la vez (por ejemplo, "a un subconjunto" o "a todos sus amigos").
 
 - `id`: UUID.
-- `senderId`: ID del usuario que se quedó sin tiempo y pide más.
-- `receiverId`: ID del amigo al que se le solicita el tiempo.
+- `senderId`: ID del usuario que se quedó sin tiempo.
 - `amountRequested`: Cantidad de tiempo solicitada (en minutos).
-- `message`: Mensaje opcional enviado por el solicitante (ej. "¡Porfa, estoy en medio de una partida!").
-- `status`: Estado de la petición. Valores: `PENDING`, `APPROVED`, `DENIED`.
-- `createdAt`: Fecha y hora exactas en la que se realizó la solicitud (generado automáticamente al insertar la fila, permitiendo mostrar cuándo ocurrió en el historial del cliente Android).
-- `updatedAt`: Fecha y hora de resolución de la solicitud.
+- `message`: Mensaje opcional enviado por el solicitante.
+- `status`: Estado general de la petición (`PENDING`, `APPROVED`, `DENIED`).
+- `createdAt`: Fecha y hora exacta de la solicitud.
+- `updatedAt`: Fecha y hora de última modificación.
 
-### 4. App (Aplicación)
-Catálogo global de las aplicaciones instaladas en los dispositivos para evitar duplicación de texto y estandarizar los datos.
+### 4. TimeRequestRecipient (Destinatario de Solicitud de Tiempo)
+Registra la relación individual entre una solicitud de tiempo general (`TimeRequest`) y cada uno de los amigos que la reciben, permitiéndoles responder de forma independiente.
 
 - `id`: UUID.
-- `packageName`: Identificador único de la aplicación (ej. `com.whatsapp`, `com.instagram.android`).
-- `name`: Nombre legible de la aplicación ("WhatsApp", "Instagram").
+- `timeRequestId`: Referencia a la petición central.
+- `receiverId`: ID del amigo al que se le solicita.
+- `status`: Estado de la respuesta de este amigo (`PENDING`, `APPROVED`, `DENIED`).
+- `createdAt` / `updatedAt`: Fechas de registro.
 
-### 5. UserAppLimit (Límites de Aplicaciones)
+> **Regla de negocio:** Cuando un `TimeRequestRecipient` cambia a `APPROVED`, el backend puede actualizar automáticamente el `status` del `TimeRequest` padre a `APPROVED`.
+
+### 5. App (Aplicación)
+Catálogo global de las aplicaciones instaladas.
+
+- `id`: UUID.
+- `packageName`: Identificador único de la aplicación (ej. `com.whatsapp`).
+- `name`: Nombre legible de la aplicación.
+
+### 6. UserAppLimit (Límites de Aplicaciones)
 Almacena el límite de tiempo configurado por un usuario para una aplicación determinada.
 
 - `id`: UUID.
 - `userId`: Referencia al usuario.
 - `appId`: Referencia a la aplicación.
-- `dailyLimit`: Límite máximo de tiempo diario permitido para esa app (en minutos).
+- `dailyLimit`: Límite máximo de tiempo diario permitido.
 
-> **Nota:** La restricción `@@unique([userId, appId])` asegura que solo exista un límite activo configurado por usuario por aplicación.
-
-### 6. UserAppTime (Tiempo de Uso Diario)
-Registra el tiempo que un usuario ha gastado efectivamente en una aplicación durante un día específico. Cada fila representa un día de uso.
+### 7. UserAppTime (Tiempo de Uso Diario)
+Registra el tiempo que un usuario ha gastado efectivamente en una aplicación durante un día específico.
 
 - `id`: UUID.
 - `userId`: Referencia al usuario.
 - `appId`: Referencia a la aplicación.
-- `timeSpent`: Tiempo total utilizado en el día (en minutos). Este valor se actualiza periódicamente desde el cliente Android.
-- `date`: Fecha correspondiente al registro (sin la hora, para agrupar estadísticas por día).
-
-> **Nota:** La combinación de usuario, app y fecha es única (`@@unique([userId, appId, date])`), de modo que no se duplican registros por día.
+- `timeSpent`: Tiempo total utilizado en el día (en minutos).
+- `date`: Fecha del registro (sin la hora, para agrupar estadísticas por día).
 
 ## Diagrama de Relaciones Conceptual
 
 ```mermaid
 erDiagram
-    User ||--o{ Friendship : "Inicia (userId1)"
-    User ||--o{ Friendship : "Recibe (userId2)"
+    User ||--o{ Friendship : "Inicia/Recibe"
     User ||--o{ TimeRequest : "Envía (senderId)"
-    User ||--o{ TimeRequest : "Recibe (receiverId)"
+    User ||--o{ TimeRequestRecipient : "Recibe (receiverId)"
+    TimeRequest ||--o{ TimeRequestRecipient : "Se envía a"
     User ||--o{ UserAppLimit : "Define"
     User ||--o{ UserAppTime : "Registra"
     App ||--o{ UserAppLimit : "Es limitada en"
@@ -83,9 +89,6 @@ erDiagram
 
     User {
         String id PK
-        String email
-        String username
-        String fcmToken
     }
     Friendship {
         String id PK
@@ -94,14 +97,15 @@ erDiagram
     TimeRequest {
         String id PK
         Int amountRequested
-        String message
         String status
         DateTime createdAt
     }
+    TimeRequestRecipient {
+        String id PK
+        String status
+    }
     App {
         String id PK
-        String packageName
-        String name
     }
     UserAppLimit {
         String id PK

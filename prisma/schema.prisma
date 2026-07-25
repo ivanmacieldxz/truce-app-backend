@@ -17,10 +17,10 @@ model User {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  sentRequests     TimeRequest[]   @relation("SentRequests")
-  receivedRequests TimeRequest[]   @relation("ReceivedRequests")
-  friendshipsInit  Friendship[]    @relation("User1")
-  friendshipsRecv  Friendship[]    @relation("User2")
+  sentRequests     TimeRequest[]          @relation("SentRequests")
+  receivedRequests TimeRequestRecipient[] @relation("ReceivedRequests")
+  friendshipsInit  Friendship[]           @relation("User1")
+  friendshipsRecv  Friendship[]           @relation("User2")
   appTimes         UserAppTime[]
   appLimits        UserAppLimit[]
 }
@@ -42,15 +42,28 @@ model Friendship {
 model TimeRequest {
   id              String   @id @default(uuid())
   senderId        String
-  receiverId      String
   amountRequested Int      // Minutes
   message         String?
-  status          String   @default("PENDING") // PENDING, APPROVED, DENIED
+  status          String   @default("PENDING") // Overall status: PENDING, APPROVED, DENIED
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  sender          User     @relation("SentRequests", fields: [senderId], references: [id])
-  receiver        User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  sender          User                   @relation("SentRequests", fields: [senderId], references: [id])
+  recipients      TimeRequestRecipient[]
+}
+
+model TimeRequestRecipient {
+  id              String      @id @default(uuid())
+  timeRequestId   String
+  receiverId      String
+  status          String      @default("PENDING") // PENDING, APPROVED, DENIED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  timeRequest     TimeRequest @relation(fields: [timeRequestId], references: [id], onDelete: Cascade)
+  receiver        User        @relation("ReceivedRequests", fields: [receiverId], references: [id])
+
+  @@unique([timeRequestId, receiverId])
 }
 
 model App {
