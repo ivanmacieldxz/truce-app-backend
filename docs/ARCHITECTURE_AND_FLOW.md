@@ -43,7 +43,7 @@ Gestiona el flujo de peticiones de tiempo de pantalla entre amigos (*peer pressu
 
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
-| `POST` | `/time-requests` | Crea y envía una solicitud de tiempo extra a uno o múltiples amigos | `{ receiverIds: string[], amountRequested, message? }` | `TimeRequestDto` (`201 Created`) |
+| `POST` | `/time-requests` | Crea y envía una solicitud de tiempo extra a uno o múltiples amigos | `{ receiverIds: string[], appId: string, amountRequested, message? }` | `TimeRequestDto` (`201 Created`) |
 | `GET` | `/time-requests` | Historial de solicitudes de tiempo (enviadas y recibidas). En caso de que el parámetro status no esté presente, devuelve todas sin filtro | Query: `?status=PENDING\|APPROVED\|DENIED&type=OUTGOING\|INCOMING&page=1&limit=20` | `TimeRequestDto[]` |
 | `GET` | `/time-requests/:id` | Detalle de una solicitud (incluye el uso diario actual del amigo para evaluar) | *-* | `TimeRequestDetailDto` |
 | `PATCH` | `/time-requests/:id` | Aprueba o rechaza la solicitud de tiempo recibida | `{ status: "APPROVED" \| "DENIED" }` | `TimeRequestDto` |
@@ -79,7 +79,7 @@ Gestiona los límites diarios que cada usuario configura por aplicación.
 Cuando un amigo responde a una solicitud con estado `"APPROVED"` a través del endpoint `PATCH /api/v1/time-requests/:id`:
 
 1. **Validación**: El servicio verifica que el usuario autenticado coincida con un destinatario (`receiverId`) de la solicitud y que el estado de su respuesta particular sea `PENDING`.
-2. **Persistencia**: Se actualiza el estado del registro (`TimeRequestRecipient`) a `APPROVED` en PostgreSQL. Dependiendo de las reglas de negocio, si un destinatario aprueba, la solicitud general (`TimeRequest`) puede cambiar a `APPROVED`.
+2. **Persistencia y Resolución de Conflictos**: Se actualiza el estado del registro individual (`TimeRequestRecipient`) a `APPROVED`. Inmediatamente, la solicitud general (`TimeRequest`) cambia a `APPROVED`. Para evitar dar tiempo duplicado, todas las demás respuestas pendientes de los otros amigos para esta misma solicitud se cancelan (pasan a `EXPIRED` o `DENIED`). Finalmente, el tiempo extra se suma al límite diario (`UserAppLimit`) del solicitante para esa aplicación (`appId`).
 3. **Notificación Push (FCM)**: Se emite un mensaje push al token FCM del usuario solicitante (`senderId`) con la siguiente estructura de payload:
 
 ```json

@@ -48,10 +48,12 @@ model TimeRequest {
   amountRequested Int      @map("amount_requested")
   message         String?
   status          String   @default("PENDING") // Overall status: PENDING, APPROVED, DENIED
+  appId           String   @map("app_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   sender          User                   @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  app             App                    @relation(fields: [appId], references: [id], onDelete: Cascade)
   recipients      TimeRequestRecipient[]
 
   @@map("time_requests")
@@ -79,6 +81,7 @@ model App {
   
   userTimes   UserAppTime[]
   userLimits  UserAppLimit[]
+  timeRequests TimeRequest[]
 
   @@map("apps")
 }

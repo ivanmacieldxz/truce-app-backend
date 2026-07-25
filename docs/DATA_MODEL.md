@@ -33,6 +33,7 @@ Registra el evento lógico de una petición de tiempo. Esto permite que un usuar
 
 - `id`: UUID.
 - `senderId`: ID del usuario que se quedó sin tiempo.
+- `appId`: Referencia a la aplicación para la cual se está pidiendo tiempo extra.
 - `amountRequested`: Cantidad de tiempo solicitada (en minutos).
 - `message`: Mensaje opcional enviado por el solicitante.
 - `status`: Estado general de la petición (`PENDING`, `APPROVED`, `DENIED`).
@@ -48,7 +49,7 @@ Registra la relación individual entre una solicitud de tiempo general (`TimeReq
 - `status`: Estado de la respuesta de este amigo (`PENDING`, `APPROVED`, `DENIED`).
 - `createdAt` / `updatedAt`: Fechas de registro.
 
-> **Regla de negocio:** Cuando un `TimeRequestRecipient` cambia a `APPROVED`, el backend puede actualizar automáticamente el `status` del `TimeRequest` padre a `APPROVED`.
+> **Regla de negocio:** Cuando un `TimeRequestRecipient` aprueba la solicitud (cambia a `APPROVED`), el backend actualiza automáticamente el `status` del `TimeRequest` padre a `APPROVED`, suma el tiempo al `UserAppLimit` (o lo registra en uso), y cancela (pasa a `EXPIRED` o `DENIED`) las solicitudes pendientes del resto de los amigos para esa misma petición, evitando que se otorgue tiempo duplicado.
 
 ### 5. App (Aplicación)
 Catálogo global de las aplicaciones instaladas.
@@ -56,6 +57,8 @@ Catálogo global de las aplicaciones instaladas.
 - `id`: UUID.
 - `packageName`: Identificador único de la aplicación (ej. `com.whatsapp`).
 - `name`: Nombre legible de la aplicación.
+
+> **Regla de negocio:** Las aplicaciones son creadas dinámicamente ("al vuelo") haciendo un *upsert* durante la sincronización diaria de estadísticas si el `packageName` reportado por Android no existe en la base de datos.
 
 ### 6. UserAppLimit (Límites de Aplicaciones)
 Almacena el límite de tiempo configurado por un usuario para una aplicación determinada.
@@ -82,6 +85,7 @@ erDiagram
     User ||--o{ TimeRequest : "Envía (senderId)"
     User ||--o{ TimeRequestRecipient : "Recibe (receiverId)"
     TimeRequest ||--o{ TimeRequestRecipient : "Se envía a"
+    App ||--o{ TimeRequest : "Se solicita para"
     User ||--o{ UserAppLimit : "Define"
     User ||--o{ UserAppTime : "Registra"
     App ||--o{ UserAppLimit : "Es limitada en"
@@ -96,6 +100,7 @@ erDiagram
     }
     TimeRequest {
         String id PK
+        String appId FK
         Int amountRequested
         String status
         DateTime createdAt
