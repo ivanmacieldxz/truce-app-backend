@@ -8,13 +8,12 @@
 
 ## Relaciones Clave a Implementar
 - **User**:
-  - Un usuario tiene muchas `Friendships` (como solicitante o receptor).
-  - Un usuario tiene muchos `DeviceTokens` (tokens FCM para sus celulares).
-  - Un usuario tiene muchas `TimeRequests` (enviadas y recibidas).
+  - Un usuario tiene muchas `Friendships` (como iniciador o receptor).
+  - Un usuario tiene un `fcmToken` asociado en su perfil principal para notificaciones.
+  - Un usuario tiene muchas `TimeRequests` y `TimeRequestRecipients` (enviadas y recibidas).
 - **TimeRequest**:
-  - Relación `requester` -> `User`.
-  - Relación `approver` -> `User`.
-  - Enum `RequestStatus`: `PENDING`, `APPROVED`, `REJECTED`, `EXPIRED`.
+  - Un `TimeRequest` general está asociado al usuario emisor (`senderId`).
+  - Tiene múltiples destinatarios a través de la relación uno a muchos con `TimeRequestRecipient`.
 
 ## Buenas Prácticas de Consultas
 - Inyectar `PrismaService` en los servicios de NestJS. Todos los queries a base de datos deben realizarse a través de este servicio global, nunca instanciando el cliente directamente.
