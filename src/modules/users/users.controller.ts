@@ -42,7 +42,7 @@ export class UsersController {
 
   @Get()
   async searchUsers(@Query() query: SearchUsersQueryDto): Promise<UserSummaryDto[]> {
-    const users = await this.usersService.searchUsers(query.q, query.page, query.limit);
+    const users = await this.usersService.searchUsers(query.q, query.page ?? 1, query.limit ?? 20);
     return users.map((u) => ({
       id: u.id,
       username: u.username,
