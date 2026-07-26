@@ -4,7 +4,7 @@ export const configuration = () => ({
     url: process.env.DATABASE_URL,
   },
   supabase: {
-    jwtSecret: process.env.SUPABASE_JWT_SECRET,
+    url: process.env.SUPABASE_URL,
   },
   fcm: {
     serverKey: process.env.FCM_SERVER_KEY,
