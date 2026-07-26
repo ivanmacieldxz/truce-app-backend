@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { User, Prisma } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
@@ -13,10 +13,19 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data,
-    });
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Username or email already in use');
+        }
+      }
+      throw error;
+    }
   }
 
   async searchUsers(query: string, page: number, limit: number): Promise<User[]> {
