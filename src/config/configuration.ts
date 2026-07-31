@@ -5,6 +5,7 @@ export const configuration = () => ({
   },
   supabase: {
     url: process.env.SUPABASE_URL,
+    secretKey: process.env.SUPABASE_SECRET_KEY,
   },
   fcm: {
     serverKey: process.env.FCM_SERVER_KEY,
