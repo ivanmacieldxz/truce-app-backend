@@ -1,12 +1,16 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { FriendDto, FriendshipRequestDto } from './dto/friend.dto';
 import { FriendshipRequestType } from './dto/query-friendships.dto';
 import { FriendshipStatusUpdate } from './dto/update-friendship.dto';
 
 @Injectable()
 export class FriendshipsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async getFriends(userId: string, page: number, limit: number): Promise<FriendDto[]> {
     const skip = (page - 1) * limit;
@@ -52,8 +56,8 @@ export class FriendshipsService {
     const requests = await this.prisma.friendship.findMany({
       where: whereClause,
       include: {
-        user1: { select: { id: true, username: true } },
-        user2: { select: { id: true, username: true } },
+        user1: { select: { id: true, username: true, fcmToken: true } },
+        user2: { select: { id: true, username: true, fcmToken: true } },
       },
       skip,
       take: limit,
@@ -104,13 +108,27 @@ export class FriendshipsService {
       }
     }
 
-    return this.prisma.friendship.create({
+    const newRequest = await this.prisma.friendship.create({
       data: {
         userId1: senderId,
         userId2: targetUserId,
         status: 'PENDING',
       },
+      include: {
+        user2: { select: { fcmToken: true } },
+      }
     });
+
+    if (newRequest.user2?.fcmToken) {
+      this.notifications.sendPushNotification(
+        newRequest.user2.fcmToken,
+        'Nueva solicitud de amistad',
+        '¡Alguien quiere agregarte en Truce!',
+        { type: 'NEW_FRIEND_REQUEST', senderId: senderId }
+      ).catch(err => console.error(err));
+    }
+
+    return newRequest;
   }
 
   async updateRequest(userId: string, friendshipId: string, status: FriendshipStatusUpdate) {
