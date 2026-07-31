@@ -5,5 +5,6 @@ export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(3000),
   DATABASE_URL: Joi.string().required(),
   SUPABASE_URL: Joi.string().uri().required(),
+  SUPABASE_SECRET_KEY: Joi.string().required(),
   FCM_SERVER_KEY: Joi.string().optional(),
 });
