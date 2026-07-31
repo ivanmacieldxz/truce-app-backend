@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException, InternalServerErrorEx
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { User, Prisma } from '@prisma/client';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 
 @Injectable()
 export class UsersService {
@@ -11,25 +11,16 @@ export class UsersService {
     private readonly supabaseService: SupabaseService,
   ) {}
 
-  async updateProfile(userId: string, data: UpdateUserDto): Promise<User> {
+  async updateFcmToken(userId: string, data: UpdateFcmTokenDto): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    try {
-      return await this.prisma.user.update({
-        where: { id: userId },
-        data,
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ConflictException('Username or email already in use');
-        }
-      }
-      throw error;
-    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
   }
 
   async searchUsers(query: string, page: number, limit: number): Promise<User[]> {

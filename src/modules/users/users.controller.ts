@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
 import { UserDto, UserSummaryDto } from './dto/user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 import { SearchUsersQueryDto } from './dto/search-users.dto';
 import { ChangeEmailDto } from './dto/change-email.dto';
 import { ChangeUsernameDto } from './dto/change-username.dto';
@@ -25,14 +25,13 @@ export class UsersController {
       updatedAt: user.updatedAt,
     };
   }
-
-  @Patch('me')
+  @Patch('me/fcm-token')
   @UseGuards(JwtAuthGuard)
-  async updateProfile(
+  async updateFcmToken(
     @CurrentUser() user: User,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateFcmTokenDto: UpdateFcmTokenDto,
   ): Promise<UserDto> {
-    const updated = await this.usersService.updateProfile(user.id, updateUserDto);
+    const updated = await this.usersService.updateFcmToken(user.id, updateFcmTokenDto);
     return {
       id: updated.id,
       email: updated.email,
@@ -42,7 +41,6 @@ export class UsersController {
       updatedAt: updated.updatedAt,
     };
   }
-
   @Get()
   @UseGuards(JwtAuthGuard)
   async searchUsers(@Query() query: SearchUsersQueryDto): Promise<UserSummaryDto[]> {
