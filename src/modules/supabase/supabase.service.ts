@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as WebSocket from 'ws';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
@@ -20,6 +21,9 @@ export class SupabaseService implements OnModuleInit {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
+      },
+      realtime: {
+        transport: WebSocket as any,
       },
     });
   }
