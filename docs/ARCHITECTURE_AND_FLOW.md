@@ -69,7 +69,9 @@ Gestiona los límites diarios que cada usuario configura por aplicación.
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
 | `GET` | `/app-limits` | Obtiene todos los límites configurados por el usuario | Query: `?page=1&limit=20` | `UserAppLimitDto[]` |
-| `PUT` | `/app-limits` | Crea o actualiza el límite diario para una aplicación (*upsert*) | `{ packageName, name, dailyLimit }` | `UserAppLimitDto` |
+| `GET` | `/app-limits/:id` | Obtiene el detalle de un límite configurado | *-* | `UserAppLimitDto` |
+| `POST` | `/app-limits` | Crea el límite diario para una aplicación | `{ packageName, name, dailyLimit }` | `UserAppLimitDto` (`201 Created`) |
+| `PATCH` | `/app-limits/:id` | Modifica el límite diario configurado de una aplicación | `{ dailyLimit }` | `UserAppLimitDto` (`200 OK`) |
 | `DELETE` | `/app-limits/:id` | Elimina el límite configurado para una app | *-* | `204 No Content` |
 
 ---
