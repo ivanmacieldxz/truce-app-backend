@@ -10,6 +10,7 @@ import { TimeRequestsModule } from './modules/time-requests/time-requests.module
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { UsageStatsModule } from './modules/usage-stats/usage-stats.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
+import { AppLimitsModule } from './modules/app-limits/app-limits.module';
 import { configuration } from './config/configuration';
 import { envValidationSchema } from './config/env.schema';
 
@@ -27,7 +28,8 @@ import { envValidationSchema } from './config/env.schema';
     TimeRequestsModule, 
     NotificationsModule, 
     UsageStatsModule,
-    SupabaseModule
+    SupabaseModule,
+    AppLimitsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
