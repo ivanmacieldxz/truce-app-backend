@@ -11,6 +11,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { UsageStatsModule } from './modules/usage-stats/usage-stats.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { AppLimitsModule } from './modules/app-limits/app-limits.module';
+import { LimitRequestsModule } from './modules/limit-requests/limit-requests.module';
 import { configuration } from './config/configuration';
 import { envValidationSchema } from './config/env.schema';
 
@@ -30,6 +31,7 @@ import { envValidationSchema } from './config/env.schema';
     UsageStatsModule,
     SupabaseModule,
     AppLimitsModule,
+    LimitRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
