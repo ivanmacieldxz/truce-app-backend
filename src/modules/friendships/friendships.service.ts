@@ -124,7 +124,7 @@ export class FriendshipsService {
         newRequest.user2.fcmToken,
         'Nueva solicitud de amistad',
         '¡Alguien quiere agregarte en Truce!',
-        { type: 'NEW_FRIEND_REQUEST', senderId: senderId }
+        { type: 'NEW_FRIEND_REQUEST', action: 'SYNC_INBOX', senderId: senderId }
       ).catch(err => console.error(err));
     }
 
@@ -148,10 +148,25 @@ export class FriendshipsService {
       throw new BadRequestException('Request is no longer pending');
     }
 
-    return this.prisma.friendship.update({
+    const updated = await this.prisma.friendship.update({
       where: { id: friendshipId },
       data: { status },
+      include: {
+        user1: { select: { fcmToken: true } },
+        user2: { select: { username: true } },
+      },
     });
+
+    if (status === 'ACCEPTED' && updated.user1?.fcmToken) {
+      this.notifications.sendPushNotification(
+        updated.user1.fcmToken,
+        '¡Solicitud de amistad aceptada!',
+        `@${updated.user2.username} aceptó tu solicitud de amistad`,
+        { type: 'FRIENDSHIP_ACCEPTED', action: 'SYNC_INBOX', friendshipId }
+      ).catch(err => console.error(err));
+    }
+
+    return updated;
   }
 
   async removeFriend(userId: string, friendId: string) {

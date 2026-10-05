@@ -19,6 +19,8 @@ model User {
 
   sentRequests     TimeRequest[]          @relation("SentRequests")
   receivedRequests TimeRequestRecipient[] @relation("ReceivedRequests")
+  sentLimitRequests     LimitRequest[]          @relation("SentLimitRequests")
+  receivedLimitRequests LimitRequestRecipient[] @relation("ReceivedLimitRequests")
   friendshipsInit  Friendship[]           @relation("User1")
   friendshipsRecv  Friendship[]           @relation("User2")
   appTimes         UserAppTime[]
@@ -74,14 +76,49 @@ model TimeRequestRecipient {
   @@map("time_request_recipients")
 }
 
+model LimitRequest {
+  id            String                  @id @default(uuid())
+  senderId      String                  @map("sender_id")
+  appId         String                  @map("app_id")
+  type          String                  // MODIFY, DISABLE, DELETE
+  currentLimit  Int                     @map("current_limit")
+  proposedLimit Int?                    @map("proposed_limit")
+  reason        String?
+  status        String                  @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  sender        User                    @relation("SentLimitRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  app           App                     @relation(fields: [appId], references: [id], onDelete: Cascade)
+  recipients    LimitRequestRecipient[]
+
+  @@map("limit_requests")
+}
+
+model LimitRequestRecipient {
+  id             String       @id @default(uuid())
+  limitRequestId String       @map("limit_request_id")
+  receiverId     String       @map("receiver_id")
+  status         String       @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  limitRequest   LimitRequest @relation(fields: [limitRequestId], references: [id], onDelete: Cascade)
+  receiver       User         @relation("ReceivedLimitRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([limitRequestId, receiverId])
+  @@map("limit_request_recipients")
+}
+
 model App {
-  id          String        @id @default(uuid())
-  packageName String        @unique @map("package_name")
-  name        String
+  id           String         @id @default(uuid())
+  packageName  String         @unique @map("package_name")
+  name         String
   
-  userTimes   UserAppTime[]
-  userLimits  UserAppLimit[]
+  userTimes    UserAppTime[]
+  userLimits   UserAppLimit[]
   timeRequests TimeRequest[]
+  limitRequests LimitRequest[]
 
   @@map("apps")
 }
@@ -91,6 +128,7 @@ model UserAppLimit {
   userId     String   @map("user_id")
   appId      String   @map("app_id")
   dailyLimit Int      @map("daily_limit")
+  isEnabled  Boolean  @default(true) @map("is_enabled")
 
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   app        App      @relation(fields: [appId], references: [id], onDelete: Cascade)
