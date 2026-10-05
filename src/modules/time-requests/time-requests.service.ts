@@ -109,6 +109,7 @@ export class TimeRequestsService {
           `@${timeRequest.sender.username} te pide ${dto.amountRequested} min para ${app.name}`,
           {
             type: 'TIME_REQUEST',
+            action: 'SYNC_INBOX',
             requestId: timeRequest.id,
             senderUsername: timeRequest.sender.username,
             appName: app.name,
@@ -319,6 +320,7 @@ export class TimeRequestsService {
           `@${currentRecipient.receiver.username} aprobó tu solicitud de ${timeRequest.amountRequested} min para ${timeRequest.app.name}`,
           {
             type: 'TIME_REQUEST_APPROVED',
+            action: 'SYNC_INBOX',
             requestId: timeRequest.id,
             amountGranted: timeRequest.amountRequested.toString(),
           },
