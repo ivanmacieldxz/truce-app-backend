@@ -169,7 +169,7 @@ export class LimitRequestsService {
           `@${limitRequest.sender.username} te pide ${actionText} para ${app.name}`,
           {
             type: 'LIMIT_REQUEST',
-            action: 'INCOMING_REQUEST_CREATED',
+            action: 'SYNC_INBOX',
             requestId: limitRequest.id,
             requestType: dto.type,
             senderUsername: limitRequest.sender.username,

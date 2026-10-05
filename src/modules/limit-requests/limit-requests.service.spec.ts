@@ -228,7 +228,7 @@ describe('LimitRequestsService', () => {
         expect.stringContaining('@ivan te pide modificar su límite a 60 min para TikTok'),
         expect.objectContaining({
           type: 'LIMIT_REQUEST',
-          action: 'INCOMING_REQUEST_CREATED',
+          action: 'SYNC_INBOX',
           requestType: 'MODIFY',
         }),
       );
