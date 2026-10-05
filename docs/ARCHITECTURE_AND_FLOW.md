@@ -76,6 +76,42 @@ Gestiona los límites diarios que cada usuario configura por aplicación.
 
 ---
 
+## 6. Módulo de Solicitudes de Gestión de Límites (`/api/v1/limit-requests`)
+
+Gestiona las solicitudes de modificación (`MODIFY`), desactivación (`DISABLE`) y eliminación (`DELETE`) de límites diarios bajo el mecanismo de rendición de cuentas social (*peer pressure*).
+
+| Método | Endpoint | Descripción | Body (Request) | Respuesta |
+|---|---|---|---|---|
+| `POST` | `/limit-requests` | Crea y envía una solicitud de modificación, desactivación o eliminación de límite a uno o múltiples amigos | `{ receiverIds: string[], appId: string, type: "MODIFY" \| "DISABLE" \| "DELETE", proposedLimit?: number, reason?: string }` | `LimitRequestDto` (`201 Created`) |
+| `GET` | `/limit-requests` | Historial de solicitudes de límites (enviadas y recibidas). | Query: `?status=PENDING\|APPROVED\|REJECTED&type=OUTGOING\|INCOMING&page=1&limit=20` | `LimitRequestDto[]` |
+| `GET` | `/limit-requests/:id` | Detalle completo de una solicitud (incluye el uso diario actual y estado del límite) | *-* | `LimitRequestDetailDto` |
+| `PATCH` | `/limit-requests/:id` | Aprueba o rechaza la solicitud de límite recibida | `{ status: "APPROVED" \| "REJECTED" }` | `LimitRequestDto` |
+
+### Lógica del Sistema en la Aprobación de Solicitudes de Límite
+
+Cuando un amigo aprueba una solicitud (`PATCH /api/v1/limit-requests/:id` con `status: "APPROVED"`):
+
+1. **Validación**: Se verifica que el usuario autenticado sea un destinatario pendiente de la solicitud.
+2. **Transacción Atómica**:
+   - Se actualiza el destinatario y la solicitud a `APPROVED`.
+   - Se cancelan/rechazan las respuestas de otros amigos pendientes para esta solicitud.
+   - Se aplica la acción correspondiente sobre el registro `UserAppLimit`:
+     - `MODIFY`: Actualiza `dailyLimit` al valor de `proposedLimit`.
+     - `DISABLE`: Actualiza `isEnabled` a `false`.
+     - `DELETE`: Elimina físicamente el registro `UserAppLimit`.
+3. **Notificación Push (FCM)**: Se emite un mensaje push con payload al solicitante:
+   ```json
+   {
+     "type": "LIMIT_REQUEST_RESOLVED",
+     "action": "SYNC_INBOX",
+     "requestId": "uuid-de-la-solicitud",
+     "requestType": "MODIFY | DISABLE | DELETE",
+     "status": "APPROVED"
+   }
+   ```
+
+---
+
 ## Lógica del Sistema en la Aprobación de Tiempo Extra
 
 Cuando un amigo responde a una solicitud con estado `"APPROVED"` a través del endpoint `PATCH /api/v1/time-requests/:id`:
