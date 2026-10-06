@@ -3,6 +3,7 @@ export class UserDto {
   email: string;
   username: string;
   fcmToken: string | null;
+  dailyGoalMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }

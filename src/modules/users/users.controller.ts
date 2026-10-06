@@ -8,6 +8,7 @@ import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 import { SearchUsersQueryDto } from './dto/search-users.dto';
 import { ChangeEmailDto } from './dto/change-email.dto';
 import { ChangeUsernameDto } from './dto/change-username.dto';
+import { UpdateGoalDto } from './dto/update-goal.dto';
 
 @Controller('api/v1/users')
 export class UsersController {
@@ -21,6 +22,7 @@ export class UsersController {
       email: user.email,
       username: user.username,
       fcmToken: user.fcmToken,
+      dailyGoalMinutes: user.dailyGoalMinutes,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -37,6 +39,7 @@ export class UsersController {
       email: updated.email,
       username: updated.username,
       fcmToken: updated.fcmToken,
+      dailyGoalMinutes: updated.dailyGoalMinutes,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     };
@@ -75,6 +78,7 @@ export class UsersController {
       email: updated.email,
       username: updated.username,
       fcmToken: updated.fcmToken,
+      dailyGoalMinutes: updated.dailyGoalMinutes,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     };
@@ -92,6 +96,25 @@ export class UsersController {
       email: updated.email,
       username: updated.username,
       fcmToken: updated.fcmToken,
+      dailyGoalMinutes: updated.dailyGoalMinutes,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    };
+  }
+
+  @Patch('me/goal')
+  @UseGuards(JwtAuthGuard)
+  async updateDailyGoal(
+    @CurrentUser() user: User,
+    @Body() body: UpdateGoalDto,
+  ): Promise<UserDto> {
+    const updated = await this.usersService.updateDailyGoal(user.id, body.dailyGoalMinutes);
+    return {
+      id: updated.id,
+      email: updated.email,
+      username: updated.username,
+      fcmToken: updated.fcmToken,
+      dailyGoalMinutes: updated.dailyGoalMinutes,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     };
