@@ -12,8 +12,20 @@ export class FriendshipsService {
     private notifications: NotificationsService,
   ) {}
 
-  async getFriends(userId: string, page: number, limit: number): Promise<FriendDto[]> {
+  private parseDate(dateStr?: string): Date {
+    const target = dateStr ?? new Date().toISOString().slice(0, 10);
+    return new Date(`${target}T00:00:00.000Z`);
+  }
+
+  async getFriends(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+    dateStr?: string,
+  ): Promise<FriendDto[]> {
     const skip = (page - 1) * limit;
+    const targetDate = this.parseDate(dateStr);
+
     const friendships = await this.prisma.friendship.findMany({
       where: {
         status: 'ACCEPTED',
@@ -28,14 +40,97 @@ export class FriendshipsService {
       orderBy: { updatedAt: 'desc' },
     });
 
+    if (friendships.length === 0) {
+      return [];
+    }
+
+    const friendIds = friendships.map((f) =>
+      f.userId1 === userId ? f.user2.id : f.user1.id,
+    );
+
+    const [users, userAppTimes, userAppLimits] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: friendIds } },
+        select: { id: true, dailyGoalMinutes: true },
+      }),
+      this.prisma.userAppTime.findMany({
+        where: {
+          userId: { in: friendIds },
+          date: targetDate,
+        },
+        include: {
+          app: true,
+        },
+        orderBy: {
+          timeSpent: 'desc',
+        },
+      }),
+      this.prisma.userAppLimit.findMany({
+        where: {
+          userId: { in: friendIds },
+          isEnabled: true,
+        },
+        include: {
+          app: true,
+        },
+        orderBy: {
+          dailyLimit: 'asc',
+        },
+      }),
+    ]);
+
+    const goalMap = new Map<string, number>();
+    for (const u of users) {
+      goalMap.set(u.id, u.dailyGoalMinutes);
+    }
+
+    const timesMap = new Map<string, typeof userAppTimes>();
+    for (const t of userAppTimes) {
+      const list = timesMap.get(t.userId) || [];
+      list.push(t);
+      timesMap.set(t.userId, list);
+    }
+
+    const limitsMap = new Map<string, typeof userAppLimits>();
+    for (const l of userAppLimits) {
+      const list = limitsMap.get(l.userId) || [];
+      list.push(l);
+      limitsMap.set(l.userId, list);
+    }
+
     return friendships.map((f) => {
       const isUser1 = f.userId1 === userId;
       const friendUser = isUser1 ? f.user2 : f.user1;
+      const fId = friendUser.id;
+
+      const friendTimes = timesMap.get(fId) || [];
+      const spentMinutes = friendTimes.reduce((acc, curr) => acc + curr.timeSpent, 0);
+      const targetLimitMinutes = goalMap.get(fId) ?? 190;
+
+      const topApps = friendTimes.slice(0, 3).map((t) => ({
+        name: t.app.name,
+        packageName: t.app.packageName,
+        minutesSpent: t.timeSpent,
+      }));
+
+      const appLimits = (limitsMap.get(fId) || []).map((l) => ({
+        name: l.app.name,
+        packageName: l.app.packageName,
+        limitMinutes: l.dailyLimit,
+        isEnabled: l.isEnabled,
+      }));
+
       return {
         id: f.id,
         friendId: friendUser.id,
         username: friendUser.username,
         createdAt: f.createdAt,
+        activity: {
+          spentMinutes,
+          targetLimitMinutes,
+          topApps,
+          appLimits,
+        },
       };
     });
   }

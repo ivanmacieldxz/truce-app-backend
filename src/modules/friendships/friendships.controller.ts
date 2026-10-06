@@ -14,7 +14,7 @@ export class FriendshipsController {
 
   @Get()
   async getFriends(@CurrentUser() user: User, @Query() query: GetFriendsQueryDto) {
-    return this.friendshipsService.getFriends(user.id, query.page || 1, query.limit || 20);
+    return this.friendshipsService.getFriends(user.id, query.page || 1, query.limit || 20, query.date);
   }
 
   @Get('requests')
