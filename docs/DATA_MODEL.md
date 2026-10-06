@@ -13,6 +13,7 @@ Representa a los usuarios de la aplicación. La autenticación real está delega
 - `email`: Correo electrónico (único).
 - `username`: Nombre de usuario visible para otros (único).
 - `fcmToken`: Token de Firebase Cloud Messaging.
+- `dailyGoalMinutes`: Objetivo diario general de tiempo en pantalla (en minutos, por defecto 190).
 - `createdAt` / `updatedAt`: Fechas de auditoría.
 
 *Relaciones:* Relaciones uno-a-muchos con las amistades, límites de apps, estadísticas, solicitudes enviadas (hacia `TimeRequest`) y solicitudes recibidas (hacia `TimeRequestRecipient`).
