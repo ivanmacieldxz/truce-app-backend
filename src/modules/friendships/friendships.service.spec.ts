@@ -20,6 +20,7 @@ describe('FriendshipsService', () => {
     user: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
     userAppTime: {
       findMany: jest.fn(),
@@ -152,6 +153,40 @@ describe('FriendshipsService', () => {
       expect(result[0].activity.targetLimitMinutes).toBe(190);
       expect(result[0].activity.topApps).toEqual([]);
       expect(result[0].activity.appLimits).toEqual([]);
+    });
+  });
+
+  describe('sendRequest', () => {
+    it('should ignore and return null when target user does not exist or is soft-deleted', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      const result = await service.sendRequest('user-1', 'deleted-user');
+
+      expect(result).toBeNull();
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+        where: { id: 'deleted-user', deletedAt: null },
+      });
+      expect(mockPrisma.friendship.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getRequests', () => {
+    it('should query requests filtering out soft-deleted users', async () => {
+      mockPrisma.friendship.findMany.mockResolvedValue([]);
+
+      await service.getRequests('user-1', undefined, 1, 10);
+
+      expect(mockPrisma.friendship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: 'PENDING',
+            OR: [
+              { userId1: 'user-1', user2: { deletedAt: null } },
+              { userId2: 'user-1', user1: { deletedAt: null } },
+            ],
+          }),
+        }),
+      );
     });
   });
 });

@@ -29,7 +29,10 @@ export class FriendshipsService {
     const friendships = await this.prisma.friendship.findMany({
       where: {
         status: 'ACCEPTED',
-        OR: [{ userId1: userId }, { userId2: userId }],
+        OR: [
+          { userId1: userId, user2: { deletedAt: null } },
+          { userId2: userId, user1: { deletedAt: null } },
+        ],
       },
       include: {
         user1: { select: { id: true, username: true } },
@@ -142,10 +145,15 @@ export class FriendshipsService {
     
     if (type === FriendshipRequestType.INCOMING) {
       whereClause.userId2 = userId;
+      whereClause.user1 = { deletedAt: null };
     } else if (type === FriendshipRequestType.OUTGOING) {
       whereClause.userId1 = userId;
+      whereClause.user2 = { deletedAt: null };
     } else {
-      whereClause.OR = [{ userId1: userId }, { userId2: userId }];
+      whereClause.OR = [
+        { userId1: userId, user2: { deletedAt: null } },
+        { userId2: userId, user1: { deletedAt: null } },
+      ];
     }
 
     const requests = await this.prisma.friendship.findMany({
@@ -175,6 +183,14 @@ export class FriendshipsService {
   async sendRequest(senderId: string, targetUserId: string) {
     if (senderId === targetUserId) {
       throw new BadRequestException('Cannot send friend request to yourself');
+    }
+
+    const targetUser = await this.prisma.user.findFirst({
+      where: { id: targetUserId, deletedAt: null },
+    });
+    if (!targetUser) {
+      // Ignorar solicitud si el destinatario está eliminado o no existe
+      return null;
     }
 
     const existing = await this.prisma.friendship.findFirst({
