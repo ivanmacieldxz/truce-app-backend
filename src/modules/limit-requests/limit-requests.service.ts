@@ -109,8 +109,8 @@ export class LimitRequestsService {
       where: {
         status: 'ACCEPTED',
         OR: [
-          { userId1: senderId, userId2: { in: dto.receiverIds } },
-          { userId1: { in: dto.receiverIds }, userId2: senderId },
+          { userId1: senderId, userId2: { in: dto.receiverIds }, user2: { deletedAt: null } },
+          { userId1: { in: dto.receiverIds }, userId2: senderId, user1: { deletedAt: null } },
         ],
       },
     });
@@ -119,10 +119,10 @@ export class LimitRequestsService {
       friendships.map((f) => (f.userId1 === senderId ? f.userId2 : f.userId1)),
     );
 
-    const hasUnconfirmed = dto.receiverIds.some(
-      (id) => !confirmedFriendIds.has(id),
+    const activeReceiverIds = dto.receiverIds.filter((id) =>
+      confirmedFriendIds.has(id),
     );
-    if (hasUnconfirmed) {
+    if (activeReceiverIds.length === 0) {
       throw new BadRequestException('All receivers must be confirmed friends');
     }
 
@@ -136,7 +136,7 @@ export class LimitRequestsService {
         reason: dto.reason || null,
         status: 'PENDING',
         recipients: {
-          create: dto.receiverIds.map((receiverId) => ({
+          create: activeReceiverIds.map((receiverId) => ({
             receiverId,
             status: 'PENDING',
           })),
@@ -203,10 +203,11 @@ export class LimitRequestsService {
           ...(status ? { status } : {}),
         },
       };
+      whereClause.sender = { deletedAt: null };
     } else {
       whereClause.OR = [
         { senderId: userId },
-        { recipients: { some: { receiverId: userId } } },
+        { recipients: { some: { receiverId: userId } }, sender: { deletedAt: null } },
       ];
       if (status) whereClause.status = status;
     }
