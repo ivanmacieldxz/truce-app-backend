@@ -18,6 +18,7 @@ Maneja el perfil del usuario, la búsqueda de contactos y el registro del token 
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
 | `GET` | `/users/me` | Obtiene el perfil del usuario autenticado | *-* | `UserDto` |
+| `PATCH` | `/users/me/goal` | Actualiza el objetivo diario general de tiempo en pantalla (en minutos) | `{ dailyGoalMinutes: number }` | `UserDto` |
 | `PATCH` | `/users/me` | Permite la actualización de datos de usuario, usado típicamente para registrar o actualizar el token FCM para notificaciones push. | `{ email: string, username: string, fcmToken: string }` | `UserDto` |
 | `GET` | `/users` | Busca usuarios por `username` para enviar solicitudes de amistad | Query: `?q=username&page=1&limit=20` | `UserSummaryDto[]` |
 
@@ -29,7 +30,7 @@ Gestiona la red de contactos, incluyendo el envío, aceptación, rechazo y cance
 
 | Método | Endpoint | Descripción | Body (Request) | Respuesta |
 |---|---|---|---|---|
-| `GET` | `/friends` | Obtiene la lista de amigos confirmados (`ACCEPTED`) | Query: `?page=1&limit=20` | `FriendDto[]` |
+| `GET` | `/friends` | Obtiene la lista de amigos confirmados (`ACCEPTED`) con su actividad diaria consolidada (tiempo total hoy, objetivo diario, top 3 apps usadas y límites activos) | Query: `?date=YYYY-MM-DD&page=1&limit=20` | `FriendDto[]` |
 | `GET` | `/friends/requests` | Lista solicitudes de amistad pendientes (enviadas o recibidas) | Query: `?type=incoming\|outgoing&page=1&limit=20` | `FriendshipRequestDto[]` |
 | `POST` | `/friends/requests` | Envía una solicitud de amistad a otro usuario | `{ targetUserId: string }` | `FriendshipDto` (`201 Created`) |
 | `PATCH` | `/friends/requests/:id` | Acepta o rechaza una solicitud de amistad recibida | `{ status: "ACCEPTED" \| "REJECTED" }` | `FriendshipDto` |

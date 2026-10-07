@@ -117,4 +117,16 @@ export class UsersService {
       throw new InternalServerErrorException('Account partially deleted. Failed to remove from auth provider.');
     }
   }
+
+  async updateDailyGoal(userId: string, dailyGoalMinutes: number): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { dailyGoalMinutes },
+    });
+  }
 }
