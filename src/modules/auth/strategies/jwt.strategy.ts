@@ -45,6 +45,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id },
     });
 
+    if (user && user.deletedAt) {
+      throw new UnauthorizedException('User account has been deleted');
+    }
+
     // Auto-create user if it doesn't exist
     if (!user) {
       if (!email) {
