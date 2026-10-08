@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { passportJwtSecret } from 'jwks-rsa';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 export interface SupabaseJwtPayload {
   sub: string;
@@ -45,10 +45,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id },
     });
 
-    if (user && user.deletedAt) {
-      throw new UnauthorizedException('User account has been deleted');
-    }
-
     // Auto-create user if it doesn't exist
     if (!user) {
       if (!email) {
@@ -65,13 +61,35 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
       }
 
-      user = await this.prisma.user.create({
-        data: {
-          id,
-          email,
-          username,
-        },
-      });
+      try {
+        user = await this.prisma.user.create({
+          data: {
+            id,
+            email,
+            username,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          const existingUser = await this.prisma.user.findUnique({
+            where: { id },
+          });
+          if (existingUser) {
+            user = existingUser;
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (user && user.deletedAt) {
+      throw new UnauthorizedException('User account has been deleted');
     }
 
     return user;
