@@ -259,6 +259,25 @@ describe('LimitRequestsService', () => {
       expect(res[0].type).toBe('DELETE');
       expect(res[0].appName).toBe('Instagram');
     });
+
+    it('should filter soft-deleted senders for INCOMING requests', async () => {
+      mockPrismaService.limitRequest.findMany.mockResolvedValue([]);
+
+      await service.getLimitRequests('user-1', 'INCOMING');
+
+      expect(mockPrismaService.limitRequest.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            recipients: {
+              some: {
+                receiverId: 'user-1',
+              },
+            },
+            sender: { deletedAt: null },
+          }),
+        }),
+      );
+    });
   });
 
   describe('getLimitRequestDetail', () => {

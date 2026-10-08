@@ -12,7 +12,9 @@ export class UsersService {
   ) {}
 
   async updateFcmToken(userId: string, data: UpdateFcmTokenDto): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -28,6 +30,7 @@ export class UsersService {
 
     return this.prisma.user.findMany({
       where: {
+        deletedAt: null,
         username: {
           contains: query,
           mode: 'insensitive',
@@ -42,20 +45,27 @@ export class UsersService {
   }
 
   async checkUsername(username: string): Promise<{ available: boolean }> {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+    const user = await this.prisma.user.findFirst({
+      where: { username, deletedAt: null },
     });
     return { available: !user };
   }
 
   async checkEmail(email: string): Promise<{ available: boolean }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    const user = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null },
     });
     return { available: !user };
   }
 
   async changeUsername(userId: string, newUsername: string): Promise<User> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     try {
       return await this.prisma.user.update({
         where: { id: userId },
@@ -70,6 +80,13 @@ export class UsersService {
   }
 
   async changeEmail(userId: string, newEmail: string): Promise<User> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     // 1. Update in Supabase Auth first. If this fails, we don't touch Prisma.
     const { error: authError } = await this.supabaseService.client.auth.admin.updateUserById(userId, {
       email: newEmail,
@@ -97,29 +114,33 @@ export class UsersService {
   }
 
   async deleteAccount(userId: string): Promise<void> {
-    // 1. Delete from Prisma
-    try {
-      await this.prisma.user.delete({
-        where: { id: userId },
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException('User not found');
-      }
-      throw error;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    // 1. Soft delete in Prisma (set deletedAt and clear FCM token)
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+        fcmToken: null,
+      },
+    });
 
     // 2. Delete from Supabase Auth
     const { error: authError } = await this.supabaseService.client.auth.admin.deleteUser(userId);
     if (authError) {
-      // We log this because the Prisma deletion succeeded, but auth deletion failed.
       console.error(`Failed to delete user ${userId} from Supabase Auth:`, authError);
-      throw new InternalServerErrorException('Account partially deleted. Failed to remove from auth provider.');
     }
   }
 
   async updateDailyGoal(userId: string, dailyGoalMinutes: number): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }

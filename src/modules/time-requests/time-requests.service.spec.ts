@@ -181,6 +181,25 @@ describe('TimeRequestsService', () => {
       expect(result).toHaveLength(1);
       expect(result[0].appName).toBe('TikTok');
     });
+
+    it('should filter soft-deleted senders for INCOMING requests', async () => {
+      mockPrismaService.timeRequest.findMany.mockResolvedValue([]);
+
+      await service.getTimeRequests('user-1', 'INCOMING');
+
+      expect(mockPrismaService.timeRequest.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            recipients: {
+              some: {
+                receiverId: 'user-1',
+              },
+            },
+            sender: { deletedAt: null },
+          }),
+        }),
+      );
+    });
   });
 
   describe('getTimeRequestDetail', () => {

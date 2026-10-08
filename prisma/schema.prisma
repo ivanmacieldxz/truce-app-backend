@@ -17,6 +17,7 @@ model User {
   dailyGoalMinutes Int             @default(190) @map("daily_goal_minutes")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
+  deletedAt        DateTime?       @map("deleted_at")
 
   sentRequests     TimeRequest[]          @relation("SentRequests")
   receivedRequests TimeRequestRecipient[] @relation("ReceivedRequests")
@@ -27,6 +28,7 @@ model User {
   appTimes         UserAppTime[]
   appLimits        UserAppLimit[]
 
+  @@index([deletedAt])
   @@map("users")
 }
 
