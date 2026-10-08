@@ -121,12 +121,15 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // 1. Soft delete in Prisma (set deletedAt and clear FCM token)
+    const timestamp = Date.now();
+    // 1. Soft delete in Prisma (set deletedAt, clear FCM token, and free email/username unique constraints)
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         deletedAt: new Date(),
         fcmToken: null,
+        email: `deleted_${timestamp}_${user.email}`,
+        username: `${user.username}_deleted_${timestamp}`,
       },
     });
 

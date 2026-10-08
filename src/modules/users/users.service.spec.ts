@@ -78,6 +78,8 @@ describe('UsersService', () => {
           data: expect.objectContaining({
             deletedAt: expect.any(Date),
             fcmToken: null,
+            email: expect.stringMatching(/^deleted_\d+_user@example\.com$/),
+            username: expect.stringMatching(/^user1_deleted_\d+$/),
           }),
         }),
       );
