@@ -14,6 +14,7 @@ describe('TimeRequestsService', () => {
   const mockPrismaService = {
     app: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
     friendship: {
       findMany: jest.fn(),
@@ -79,6 +80,7 @@ describe('TimeRequestsService', () => {
 
     it('should throw NotFoundException if app is not found', async () => {
       mockPrismaService.app.findUnique.mockResolvedValue(null);
+      mockPrismaService.app.findFirst.mockResolvedValue(null);
 
       await expect(
         service.createTimeRequest('user-1', {
@@ -87,6 +89,25 @@ describe('TimeRequestsService', () => {
           amountRequested: 15,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should find app by packageName if id lookup returns null', async () => {
+      mockPrismaService.app.findUnique.mockResolvedValue(null);
+      mockPrismaService.app.findFirst.mockResolvedValue({
+        id: 'real-uuid',
+        name: 'Instagram',
+        packageName: 'com.instagram.android',
+      });
+      mockPrismaService.friendship.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.createTimeRequest('user-1', {
+          receiverIds: ['friend-1'],
+          appId: 'com.instagram.android',
+          amountRequested: 15,
+        }),
+      ).rejects.toThrow(BadRequestException); // Fails at friendships check, meaning app was successfully found!
+      expect(mockPrismaService.app.findFirst).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if not all receivers are confirmed friends', async () => {

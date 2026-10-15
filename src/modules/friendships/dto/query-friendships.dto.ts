@@ -1,5 +1,5 @@
 import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class GetFriendsQueryDto {
   @IsOptional()
@@ -27,6 +27,7 @@ export enum FriendshipRequestType {
 
 export class GetRequestsQueryDto extends GetFriendsQueryDto {
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase() : value))
   @IsEnum(FriendshipRequestType)
   type?: FriendshipRequestType;
 }
