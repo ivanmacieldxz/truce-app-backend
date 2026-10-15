@@ -47,13 +47,18 @@ export class NotificationsService implements OnModuleInit {
     }
 
     try {
+      const payloadData: Record<string, string> = {
+        ...(data || {}),
+        title,
+        body,
+      };
+
       const message: Message = {
-        notification: {
-          title,
-          body,
-        },
-        data: data || {},
+        data: payloadData,
         token,
+        android: {
+          priority: 'high',
+        },
       };
 
       const response = await getMessaging().send(message);
