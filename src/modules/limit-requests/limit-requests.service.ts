@@ -423,6 +423,9 @@ export class LimitRequestsService {
             requestId: limitRequest.id,
             requestType: limitRequest.type,
             status: 'APPROVED',
+            appName: limitRequest.app.name,
+            packageName: limitRequest.app.packageName,
+            proposedLimit: limitRequest.proposedLimit ? limitRequest.proposedLimit.toString() : '',
           },
         );
       }
@@ -456,6 +459,8 @@ export class LimitRequestsService {
               requestId: limitRequest.id,
               requestType: limitRequest.type,
               status: 'REJECTED',
+              appName: limitRequest.app.name,
+              packageName: limitRequest.app.packageName,
             },
           );
         }

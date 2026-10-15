@@ -336,6 +336,8 @@ export class TimeRequestsService {
             action: 'SYNC_INBOX',
             requestId: timeRequest.id,
             amountGranted: timeRequest.amountRequested.toString(),
+            appName: timeRequest.app.name,
+            packageName: timeRequest.app.packageName,
           },
         );
       }
@@ -357,6 +359,22 @@ export class TimeRequestsService {
           where: { id: requestId },
           data: { status: 'DENIED' },
         });
+
+        if (timeRequest.sender.fcmToken) {
+          await this.notificationsService.sendPushNotification(
+            timeRequest.sender.fcmToken,
+            'Solicitud de tiempo rechazada',
+            `Tu solicitud para ${timeRequest.app.name} fue rechazada`,
+            {
+              type: 'TIME_REQUEST_RESOLVED',
+              action: 'SYNC_INBOX',
+              requestId: timeRequest.id,
+              status: 'DENIED',
+              appName: timeRequest.app.name,
+              packageName: timeRequest.app.packageName,
+            },
+          );
+        }
       }
     }
 
