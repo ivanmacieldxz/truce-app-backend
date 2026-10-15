@@ -51,9 +51,21 @@ export class LimitRequestsService {
       throw new BadRequestException('Cannot send limit request to yourself');
     }
 
-    const app = await this.prisma.app.findUnique({
+    let app = await this.prisma.app.findUnique({
       where: { id: dto.appId },
     });
+
+    if (!app && typeof this.prisma.app.findFirst === 'function') {
+      const normalizedPackage = dto.appId.includes('.') ? dto.appId : dto.appId.replace(/_/g, '.');
+      app = await this.prisma.app.findFirst({
+        where: {
+          OR: [
+            { packageName: dto.appId },
+            { packageName: normalizedPackage },
+          ],
+        },
+      });
+    }
 
     if (!app) {
       throw new NotFoundException('App not found');
@@ -63,7 +75,7 @@ export class LimitRequestsService {
       where: {
         userId_appId: {
           userId: senderId,
-          appId: dto.appId,
+          appId: app.id,
         },
       },
     });
@@ -77,7 +89,7 @@ export class LimitRequestsService {
     const existingPending = await this.prisma.limitRequest.findFirst({
       where: {
         senderId,
-        appId: dto.appId,
+        appId: app.id,
         status: 'PENDING',
       },
     });
@@ -129,7 +141,7 @@ export class LimitRequestsService {
     const limitRequest = await this.prisma.limitRequest.create({
       data: {
         senderId,
-        appId: dto.appId,
+        appId: app.id,
         type: dto.type,
         currentLimit: userLimit.dailyLimit,
         proposedLimit: dto.type === 'MODIFY' ? dto.proposedLimit : null,

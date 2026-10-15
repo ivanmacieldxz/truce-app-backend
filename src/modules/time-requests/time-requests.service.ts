@@ -49,9 +49,21 @@ export class TimeRequestsService {
       throw new BadRequestException('Cannot send time request to yourself');
     }
 
-    const app = await this.prisma.app.findUnique({
+    let app = await this.prisma.app.findUnique({
       where: { id: dto.appId },
     });
+
+    if (!app && typeof this.prisma.app.findFirst === 'function') {
+      const normalizedPackage = dto.appId.includes('.') ? dto.appId : dto.appId.replace(/_/g, '.');
+      app = await this.prisma.app.findFirst({
+        where: {
+          OR: [
+            { packageName: dto.appId },
+            { packageName: normalizedPackage },
+          ],
+        },
+      });
+    }
 
     if (!app) {
       throw new NotFoundException('App not found');
@@ -79,7 +91,7 @@ export class TimeRequestsService {
     const timeRequest = await this.prisma.timeRequest.create({
       data: {
         senderId,
-        appId: dto.appId,
+        appId: app.id,
         amountRequested: dto.amountRequested,
         message: dto.message || null,
         status: 'PENDING',

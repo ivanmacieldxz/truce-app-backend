@@ -14,6 +14,7 @@ describe('LimitRequestsService', () => {
   const mockPrismaService = {
     app: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
     friendship: {
       findMany: jest.fn(),
@@ -82,6 +83,7 @@ describe('LimitRequestsService', () => {
 
     it('should throw NotFoundException if app is not found', async () => {
       mockPrismaService.app.findUnique.mockResolvedValue(null);
+      mockPrismaService.app.findFirst.mockResolvedValue(null);
 
       await expect(
         service.createLimitRequest('user-1', {
@@ -91,6 +93,22 @@ describe('LimitRequestsService', () => {
           proposedLimit: 60,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should find app by packageName if id lookup returns null', async () => {
+      mockPrismaService.app.findUnique.mockResolvedValue(null);
+      mockPrismaService.app.findFirst.mockResolvedValue({ id: 'app-1', name: 'TikTok', packageName: 'com.tiktok.android' });
+      mockPrismaService.userAppLimit.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.createLimitRequest('user-1', {
+          receiverIds: ['friend-1'],
+          appId: 'com.tiktok.android',
+          type: 'MODIFY',
+          proposedLimit: 60,
+        }),
+      ).rejects.toThrow(NotFoundException); // Throws user limit not found, which means app was successfully resolved!
+      expect(mockPrismaService.app.findFirst).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if user limit is not configured for app', async () => {
