@@ -46,6 +46,7 @@ describe('AppLimitsService', () => {
           userId: 'user-1',
           appId: 'app-1',
           dailyLimit: 60,
+          isEnabled: true,
           app: {
             id: 'app-1',
             packageName: 'com.instagram.android',
@@ -73,6 +74,7 @@ describe('AppLimitsService', () => {
           packageName: 'com.instagram.android',
           appName: 'Instagram',
           dailyLimit: 60,
+          isEnabled: true,
         },
       ]);
     });
@@ -85,6 +87,7 @@ describe('AppLimitsService', () => {
         userId: 'user-1',
         appId: 'app-1',
         dailyLimit: 45,
+        isEnabled: true,
         app: {
           id: 'app-1',
           packageName: 'com.twitter.android',
@@ -102,6 +105,7 @@ describe('AppLimitsService', () => {
         packageName: 'com.twitter.android',
         appName: 'X',
         dailyLimit: 45,
+        isEnabled: true,
       });
     });
 
@@ -119,6 +123,7 @@ describe('AppLimitsService', () => {
         userId: 'other-user',
         appId: 'app-1',
         dailyLimit: 45,
+        isEnabled: true,
         app: { id: 'app-1', packageName: 'pkg', name: 'app' },
       });
 
@@ -148,6 +153,7 @@ describe('AppLimitsService', () => {
         userId: 'user-1',
         appId: 'app-1',
         dailyLimit: 30,
+        isEnabled: true,
         app: mockApp,
       });
 
@@ -174,6 +180,7 @@ describe('AppLimitsService', () => {
         packageName: 'com.tiktok.android',
         appName: 'TikTok',
         dailyLimit: 30,
+        isEnabled: true,
       });
     });
 
@@ -206,6 +213,7 @@ describe('AppLimitsService', () => {
         userId: 'user-1',
         appId: 'app-1',
         dailyLimit: 30,
+        isEnabled: true,
         app: { id: 'app-1', packageName: 'com.tiktok.android', name: 'TikTok' },
       };
 
@@ -231,7 +239,37 @@ describe('AppLimitsService', () => {
         packageName: 'com.tiktok.android',
         appName: 'TikTok',
         dailyLimit: 90,
+        isEnabled: true,
       });
+    });
+
+    it('should update isEnabled successfully', async () => {
+      const mockExisting = {
+        id: 'limit-1',
+        userId: 'user-1',
+        appId: 'app-1',
+        dailyLimit: 30,
+        isEnabled: false,
+        app: { id: 'app-1', packageName: 'com.tiktok.android', name: 'TikTok' },
+      };
+
+      const mockUpdated = {
+        ...mockExisting,
+        isEnabled: true,
+      };
+
+      mockPrismaService.userAppLimit.findUnique.mockResolvedValue(mockExisting);
+      mockPrismaService.userAppLimit.update.mockResolvedValue(mockUpdated);
+
+      const result = await service.updateLimit('user-1', 'limit-1', { isEnabled: true });
+
+      expect(mockPrismaService.userAppLimit.update).toHaveBeenCalledWith({
+        where: { id: 'limit-1' },
+        data: { isEnabled: true },
+        include: { app: true },
+      });
+
+      expect(result.isEnabled).toBe(true);
     });
 
     it('should throw NotFoundException if limit does not exist', async () => {
@@ -253,6 +291,7 @@ describe('AppLimitsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
 
   describe('deleteLimit', () => {
     it('should delete limit successfully', async () => {
