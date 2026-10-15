@@ -305,26 +305,8 @@ export class TimeRequestsService {
           },
           data: { status: 'DENIED' },
         });
-
-        const existingLimit = await tx.userAppLimit.findUnique({
-          where: {
-            userId_appId: {
-              userId: timeRequest.senderId,
-              appId: timeRequest.appId,
-            },
-          },
-        });
-
-        if (existingLimit) {
-          await tx.userAppLimit.update({
-            where: { id: existingLimit.id },
-            data: {
-              dailyLimit:
-                existingLimit.dailyLimit + timeRequest.amountRequested,
-            },
-          });
-        }
       });
+
 
       if (timeRequest.sender.fcmToken) {
         await this.notificationsService.sendPushNotification(

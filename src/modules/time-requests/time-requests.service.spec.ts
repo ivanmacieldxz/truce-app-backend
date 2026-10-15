@@ -283,7 +283,7 @@ describe('TimeRequestsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should execute transaction, increase app limit and send push notification on APPROVE', async () => {
+    it('should execute transaction and send push notification on APPROVE', async () => {
       const mockRequest = {
         id: 'req-1',
         senderId: 'user-1',
@@ -319,15 +319,9 @@ describe('TimeRequestsService', () => {
           timeRequest: {
             update: jest.fn(),
           },
-          userAppLimit: {
-            findUnique: jest.fn().mockResolvedValue({
-              id: 'limit-1',
-              dailyLimit: 60,
-            }),
-            update: jest.fn(),
-          },
         });
       });
+
 
       const result = await service.respondTimeRequest(
         'user-2',
