@@ -39,6 +39,7 @@ export class AppLimitsService {
       packageName: l.app.packageName,
       appName: l.app.name,
       dailyLimit: l.dailyLimit,
+      isEnabled: l.isEnabled,
     }));
   }
 
@@ -61,6 +62,7 @@ export class AppLimitsService {
       packageName: limit.app.packageName,
       appName: limit.app.name,
       dailyLimit: limit.dailyLimit,
+      isEnabled: limit.isEnabled,
     };
   }
 
@@ -109,6 +111,7 @@ export class AppLimitsService {
       packageName: created.app.packageName,
       appName: created.app.name,
       dailyLimit: created.dailyLimit,
+      isEnabled: created.isEnabled,
     };
   }
 
@@ -117,18 +120,45 @@ export class AppLimitsService {
     limitId: string,
     dto: UpdateAppLimitDto,
   ): Promise<UserAppLimitDto> {
-    const existingLimit = await this.prisma.userAppLimit.findUnique({
+    const normalizedPackage = limitId.includes('.')
+      ? limitId
+      : limitId.replace(/_/g, '.');
+
+    let existingLimit = await this.prisma.userAppLimit.findUnique({
       where: { id: limitId },
       include: { app: true },
     });
+
+    if (!existingLimit && typeof this.prisma.userAppLimit.findFirst === 'function') {
+      existingLimit = await this.prisma.userAppLimit.findFirst({
+        where: {
+          userId,
+          app: {
+            OR: [
+              { packageName: limitId },
+              { packageName: normalizedPackage },
+            ],
+          },
+        },
+        include: { app: true },
+      });
+    }
 
     if (!existingLimit || existingLimit.userId !== userId) {
       throw new NotFoundException('App limit not found');
     }
 
+    const dataToUpdate: { dailyLimit?: number; isEnabled?: boolean } = {};
+    if (dto.dailyLimit !== undefined) {
+      dataToUpdate.dailyLimit = dto.dailyLimit;
+    }
+    if (dto.isEnabled !== undefined) {
+      dataToUpdate.isEnabled = dto.isEnabled;
+    }
+
     const updated = await this.prisma.userAppLimit.update({
-      where: { id: limitId },
-      data: { dailyLimit: dto.dailyLimit },
+      where: { id: existingLimit.id },
+      data: dataToUpdate,
       include: { app: true },
     });
 
@@ -138,20 +168,39 @@ export class AppLimitsService {
       packageName: updated.app.packageName,
       appName: updated.app.name,
       dailyLimit: updated.dailyLimit,
+      isEnabled: updated.isEnabled,
     };
   }
 
   async deleteLimit(userId: string, limitId: string): Promise<void> {
-    const existingLimit = await this.prisma.userAppLimit.findUnique({
+    const normalizedPackage = limitId.includes('.')
+      ? limitId
+      : limitId.replace(/_/g, '.');
+
+    let existingLimit = await this.prisma.userAppLimit.findUnique({
       where: { id: limitId },
     });
+
+    if (!existingLimit && typeof this.prisma.userAppLimit.findFirst === 'function') {
+      existingLimit = await this.prisma.userAppLimit.findFirst({
+        where: {
+          userId,
+          app: {
+            OR: [
+              { packageName: limitId },
+              { packageName: normalizedPackage },
+            ],
+          },
+        },
+      });
+    }
 
     if (!existingLimit || existingLimit.userId !== userId) {
       throw new NotFoundException('App limit not found');
     }
 
     await this.prisma.userAppLimit.delete({
-      where: { id: limitId },
+      where: { id: existingLimit.id },
     });
   }
 }

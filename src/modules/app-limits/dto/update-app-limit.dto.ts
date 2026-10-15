@@ -1,7 +1,13 @@
-import { IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class UpdateAppLimitDto {
+  @IsOptional()
   @IsInt()
   @Min(1)
-  dailyLimit: number;
+  dailyLimit?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isEnabled?: boolean;
 }
+

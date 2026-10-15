@@ -4,4 +4,6 @@ export class UserAppLimitDto {
   packageName: string;
   appName: string;
   dailyLimit: number;
+  isEnabled: boolean;
 }
+
